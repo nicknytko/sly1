@@ -22,7 +22,7 @@ void CBinding::CloneTo(CBinding *pbindingClone, CFrame *pframeClone)
 
 CBinding *PbindingNew()
 {
-    CBinding *pbinding = (CBinding *)g_splotheapUnk1.PvAllocClear();
+    CBinding *pbinding = (CBinding *)g_splotheapBinding.PvAllocClear();
     memset(pbinding, 0, sizeof(CBinding));
     new (pbinding) CBinding();
     return pbinding;

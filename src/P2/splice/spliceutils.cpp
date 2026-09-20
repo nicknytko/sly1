@@ -20,8 +20,8 @@ void StartupSplice()
     g_splotheapFrame.Startup(0x1c, 0x190);
     g_splotheapFrame.m_pfndelete = reinterpret_cast<PFNDELETE>(DeleteFrame);
 
-    g_splotheapUnk1.Startup(0x10, 0x800);
-    g_splotheapUnk1.m_pfndelete = reinterpret_cast<PFNDELETE>(DeleteBinding);
+    g_splotheapBinding.Startup(0x10, 0x800);
+    g_splotheapBinding.m_pfndelete = reinterpret_cast<PFNDELETE>(DeleteBinding);
 
     g_splotheapProc.Startup(0x14, 0x800);
     StartupSpliceStructuredTypeFactories();
@@ -34,7 +34,7 @@ void ShutdownSplice()
 {
     g_splotheapPair.Shutdown();
     g_splotheapFrame.Shutdown();
-    g_splotheapUnk1.Shutdown();
+    g_splotheapBinding.Shutdown();
     g_splotheapProc.Shutdown();
     ShutdownSpliceStructuredTypeFactories();
     g_splotheapMethod.Shutdown();

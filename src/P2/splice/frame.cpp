@@ -39,7 +39,7 @@ INCLUDE_ASM("asm/nonmatchings/P2/splice/frame", CloneTo__6CFrameP6CFrame);
 CFrame *PframeNew()
 {
     CFrame *pframe = (CFrame *)g_splotheapFrame.PvAllocClear();
-    memset(pframe, 0, 0x1c);
+    memset(pframe, 0, sizeof(CFrame));
     return pframe;
 }
 

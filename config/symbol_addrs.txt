@@ -339,7 +339,7 @@ DeleteBinding__FP8CBinding      = 0x11C4E8; // type:func
 
 g_splotheapPair                 = 0x25C250; // size:0x1C
 g_splotheapFrame                = 0x25C270; // size:0x1C
-g_splotheapUnk1                 = 0x25C290; // size:0x1C
+g_splotheapBinding              = 0x25C290; // size:0x1C
 g_splotheapProc                 = 0x25C2B0; // size:0x1C
 g_splotheapMethod               = 0x25C2D0; // size:0x1C
 

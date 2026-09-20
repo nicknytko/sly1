@@ -83,7 +83,7 @@ void CGc::UpdateRecyclable()
 {
     g_splotheapPair.UpdateRecyclable();
     g_splotheapFrame.UpdateRecyclable();
-    g_splotheapUnk1.UpdateRecyclable();
+    g_splotheapBinding.UpdateRecyclable();
     g_splotheapProc.UpdateRecyclable();
     g_splotheapMethod.UpdateRecyclable();
 }
