@@ -4,6 +4,7 @@
 #include <splice/pair.h>
 #include <splice/splotheap.h>
 #include <splice/vecmat.h>
+#include <splice/binding.h>
 
 extern CGc g_gc;
 

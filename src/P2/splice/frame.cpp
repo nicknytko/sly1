@@ -28,7 +28,19 @@ CRef CFrame::RefAddBinding(SYMID symid, CRef *pref)
     return cref;
 }
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/frame", RefSetBinding__6CFrameUiP4CRef);
+CRef CFrame::RefSetBinding(SYMID symid, CRef *pref)
+{
+    CRef cref;
+
+    /* Update the symbol if we find it */
+    CRef* pBoundSymbol = PrefFindBinding(symid, true);
+    if (pBoundSymbol != NULL) {
+        *pBoundSymbol = *pref;
+    }
+
+    cref.SetTag(TAGK_Void);
+    return cref;
+}
 
 INCLUDE_ASM("asm/nonmatchings/P2/splice/frame", FFindBinding__6CFrameUiiP4CRef);
 
