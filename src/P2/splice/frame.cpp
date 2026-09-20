@@ -42,9 +42,63 @@ CRef CFrame::RefSetBinding(SYMID symid, CRef *pref)
     return cref;
 }
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/frame", FFindBinding__6CFrameUiiP4CRef);
+int CFrame::FFindBinding(SYMID symid, int fRecursive, CRef *pref)
+{
+    CRef* pBoundSymbol = PrefFindBinding(symid, fRecursive);
+    if (pBoundSymbol != NULL) {
+        if (pref != NULL) {
+            *pref = *pBoundSymbol;
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/P2/splice/frame", PrefFindBinding__6CFrameUii);
+#ifdef SKIP_ASM
+CRef *CFrame::PrefFindBinding(SYMID symid, int fRecursive)
+{
+    fSearchingBinding = true;
+    CBinding* pBindingCurrent = m_pbindingHead;
+    CRef *pFound = NULL;
+
+    /* Search through the current bindings of this frame for the symbol */
+    while (pBindingCurrent != NULL)
+    {
+        if (pBindingCurrent->m_symid != symid)
+        {
+            pBindingCurrent = pBindingCurrent->m_pbindingNext;
+        }
+        else
+        {
+            pFound = &pBindingCurrent->m_ref;
+        }
+    }
+
+    /* If we haven't found it and this is a recursive call, then also check
+       the parent frames. */
+    if (pBindingCurrent == NULL && !fRecursive)
+    {
+        int nParentFrameIdx = 0;
+        if (m_cpframeParent > 0)
+        {
+            do
+            {
+                CFrame* pParentFrame = m_apframeParent[nParentFrameIdx];
+                if (pParentFrame->fSearchingBinding == 0 ||
+                    pParentFrame->PrefFindBinding(symid, fRecursive) != NULL)
+                {
+                    break;
+                }
+            } while (nParentFrameIdx < m_cpframeParent);
+        }
+    }
+
+    fSearchingBinding = false;
+    return pFound;
+}
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/P2/splice/frame", CloneTo__6CFrameP6CFrame);
 

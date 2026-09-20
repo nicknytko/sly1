@@ -18,7 +18,7 @@ private:
     /* 0x00 */ int m_cpframeParent;
     /* 0x04 */ CFrame *m_apframeParent[4];
     /* 0x14 */ CBinding *m_pbindingHead;
-    /* 0x18 */ int unk_18;
+    /* 0x18 */ int fSearchingBinding; /* Used during PrefFindBinding to ensure termination */
 
 public:
     void SetSingleParent(CFrame *pframeParent);
