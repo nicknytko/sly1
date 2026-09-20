@@ -3,6 +3,7 @@
 #include <splice/ref.h>
 #include <splice/binding.h>
 #include <sce/memset.h>
+#include <memory.h>
 
 void CFrame::SetSingleParent(CFrame *pframeParent)
 {
@@ -80,7 +81,7 @@ CRef *CFrame::PrefFindBinding(SYMID symid, int fRecursive)
             CFrame *pframeParent = m_apframeParent[ipframe];
             if (!pframeParent->fSearchingBinding)
             {
-                pFound = pframeParent->PFoundFindBinding(symid, fRecursive);
+                pFound = pframeParent->PrefFindBinding(symid, fRecursive);
                 if (pFound != NULL)
                 {
                     goto done;
@@ -94,7 +95,18 @@ done:
     return pFound;
 }
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/frame", CloneTo__6CFrameP6CFrame);
+void CFrame::CloneTo(CFrame *pframeClone)
+{
+    pframeClone->m_cpframeParent = m_cpframeParent;
+    CopyAb(pframeClone->m_apframeParent, m_apframeParent, m_cpframeParent * sizeof(CFrame *));
+
+    if (m_pbindingHead != NULL)
+    {
+        CBinding* pNewBindings = PbindingNew();
+        m_pbindingHead->CloneTo(pNewBindings, pframeClone);
+        pframeClone->m_pbindingHead = pNewBindings;
+    }
+}
 
 CFrame *PframeNew()
 {
