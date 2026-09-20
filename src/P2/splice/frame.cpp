@@ -55,50 +55,44 @@ int CFrame::FFindBinding(SYMID symid, int fRecursive, CRef *pref)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/frame", PrefFindBinding__6CFrameUii);
-#ifdef SKIP_ASM
 CRef *CFrame::PrefFindBinding(SYMID symid, int fRecursive)
 {
+    /* Set this flag to true while we are searching for bindings in case there is a loop
+     * in the frame DAG. */
     fSearchingBinding = true;
-    CBinding* pBindingCurrent = m_pbindingHead;
     CRef *pFound = NULL;
 
-    /* Search through the current bindings of this frame for the symbol */
-    while (pBindingCurrent != NULL)
+    /* First search for bindings in this frame */
+    for (CBinding *pbinding = m_pbindingHead; pbinding != NULL; pbinding = pbinding->m_pbindingNext)
     {
-        if (pBindingCurrent->m_symid != symid)
+        if (pbinding->m_symid == symid)
         {
-            pBindingCurrent = pBindingCurrent->m_pbindingNext;
-        }
-        else
-        {
-            pFound = &pBindingCurrent->m_ref;
+            pFound = &pbinding->m_ref;
+            goto done;
         }
     }
 
-    /* If we haven't found it and this is a recursive call, then also check
-       the parent frames. */
-    if (pBindingCurrent == NULL && !fRecursive)
+    /* If we didn't find the binding, recurse on the parent frames */
+    if (fRecursive)
     {
-        int nParentFrameIdx = 0;
-        if (m_cpframeParent > 0)
+        for (int ipframe = 0; ipframe < m_cpframeParent; ipframe++)
         {
-            do
+            CFrame *pframeParent = m_apframeParent[ipframe];
+            if (!pframeParent->fSearchingBinding)
             {
-                CFrame* pParentFrame = m_apframeParent[nParentFrameIdx];
-                if (pParentFrame->fSearchingBinding == 0 ||
-                    pParentFrame->PrefFindBinding(symid, fRecursive) != NULL)
+                pFound = pframeParent->PFoundFindBinding(symid, fRecursive);
+                if (pFound != NULL)
                 {
-                    break;
+                    goto done;
                 }
-            } while (nParentFrameIdx < m_cpframeParent);
+            }
         }
     }
 
+done:
     fSearchingBinding = false;
     return pFound;
 }
-#endif
 
 INCLUDE_ASM("asm/nonmatchings/P2/splice/frame", CloneTo__6CFrameP6CFrame);
 
