@@ -21,7 +21,7 @@ void StartupSplice()
     g_splotheapFrame.m_pfndelete = reinterpret_cast<PFNDELETE>(DeleteFrame);
 
     g_splotheapUnk1.Startup(0x10, 0x800);
-    g_splotheapUnk1.m_pfndelete = reinterpret_cast<PFNDELETE>(0x11C4E8);
+    g_splotheapUnk1.m_pfndelete = reinterpret_cast<PFNDELETE>(DeleteBinding);
 
     g_splotheapProc.Startup(0x14, 0x800);
     StartupSpliceStructuredTypeFactories();

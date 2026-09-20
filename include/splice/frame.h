@@ -8,6 +8,7 @@
 
 // Forward.
 class CRef;
+class CBinding;
 
 typedef uint SYMID;
 
@@ -16,7 +17,8 @@ class CFrame
 private:
     /* 0x00 */ int m_cpframeParent;
     /* 0x04 */ CFrame *m_apframeParent[4];
-    // ...
+    /* 0x14 */ CBinding *m_pbindingHead;
+    /* 0x18 */ int unk_18;
 
 public:
     void SetSingleParent(CFrame *pframeParent);

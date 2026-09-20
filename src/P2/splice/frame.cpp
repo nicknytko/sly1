@@ -1,5 +1,7 @@
 #include <splice/frame.h>
 #include <splice/splotheap.h>
+#include <splice/ref.h>
+#include <splice/binding.h>
 #include <sce/memset.h>
 
 void CFrame::SetSingleParent(CFrame *pframeParent)
@@ -13,7 +15,18 @@ void CFrame::AddParent(CFrame *pframeParent)
     m_apframeParent[m_cpframeParent++] = pframeParent;
 }
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/frame", RefAddBinding__6CFrameUiP4CRef);
+CRef CFrame::RefAddBinding(SYMID symid, CRef *pref)
+{
+    CRef cref;
+    CBinding* pbinding = PbindingNew();
+    pbinding->m_symid = symid;
+    pbinding->m_ref = *pref;
+    pbinding->m_pbindingNext = m_pbindingHead;
+    m_pbindingHead = pbinding;
+
+    cref.SetTag(TAGK_Void);
+    return cref;
+}
 
 INCLUDE_ASM("asm/nonmatchings/P2/splice/frame", RefSetBinding__6CFrameUiP4CRef);
 
