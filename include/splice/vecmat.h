@@ -17,6 +17,8 @@ void DecrefVector(VECTOR *pvector);
 
 MATRIX4 *PmatrixNew();
 
+void DeleteMatrix(MATRIX4 *pamtrix);
+
 void IncrefMatrix(MATRIX4 *pmatrix);
 
 void DecrefMatrix(MATRIX4 *pmatrix);

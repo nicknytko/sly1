@@ -85,8 +85,10 @@ public:
     CRef &operator=(const CRef &ref);
     bool operator==(const CRef &ref);
     void CloneTo(CRef *prefClone, CFrame *pframeClone);
+
     void Decref();
     void Incref();
+
     void SetTag(TAGK tagk);
     void SetS32(int n);
     void SetF32(float g);
@@ -102,6 +104,12 @@ public:
     void SetSmp(SMP *psmp);
     void SetBasic(BASIC *pbasic);
     void SetMethod(CMethod *pmethod);
+
+    /* The beta debug symbols have evidence of tag getters that are inlined by
+       the compiler.  Most of the time the codegen is identical whether you are
+       using these or accessing the field directly, but there are cases where
+       the getters slightly change codegen and are required to match. */
+
     int GetS32() const
     {
         return m_tag.m_n;
@@ -158,6 +166,7 @@ public:
     {
         return m_tag.m_pmethod;
     }
+
     CRef RefCoerceS32();
     CRef RefCoerceF32();
 };

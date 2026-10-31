@@ -253,10 +253,14 @@ void CRef::SetMethod(CMethod *pmethod)
     m_tagk = TAGK_Method;
 }
 
-CRef CRef::RefCoerceS32() {
-    if (m_tagk == TAGK_S32) {
+CRef CRef::RefCoerceS32()
+{
+    if (m_tagk == TAGK_S32)
+    {
         return *this;
-    } else {
+    }
+    else
+    {
         CRef ref;
         ref.SetS32((int) m_tag.m_g);
         return ref;
@@ -264,9 +268,12 @@ CRef CRef::RefCoerceS32() {
 }
 
 CRef CRef::RefCoerceF32() {
-    if (m_tagk == TAGK_F32) {
+    if (m_tagk == TAGK_F32)
+    {
         return *this;
-    } else {
+    }
+    else
+    {
         CRef ref;
         ref.SetF32((float) m_tag.m_n);
         return ref;
