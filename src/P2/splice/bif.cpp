@@ -1,9 +1,13 @@
 #include <splice/bif.h>
 #include <splice/ref.h>
 #include <splice/frame.h>
+#include <splice/pair.h>
+#include <splice/vecmat.h>
+
 #include <gcc/math.h>
 #include <util.h>
 #include <po.h>
+#include <sce/rand.h>
 
 /**
  * @brief Function pointer for uniform float operation dispatch.
@@ -157,9 +161,247 @@ BIF g_mpbifkbif[125] =
     {RefOpSetMusicRegister, 2, 0},
 };
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpAdd__FiP4CRefP6CFrame);
+CRef RefOpAdd(int carg, CRef *aref, CFrame *pframe)
+{
+    CRef cref;
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpSub__FiP4CRefP6CFrame);
+    TAGK tagk = aref[0].m_tagk;
+    CPair *pCurrent;
+    if (aref[1].m_tagk == TAGK_None)
+    {
+        pCurrent = NULL;
+    }
+    else
+    {
+        pCurrent = aref[1].GetPair();
+    }
+
+    switch (tagk)
+    {
+        case TAGK_S32:
+        case TAGK_F32:
+        {
+            float acc;
+            int fIsInt;
+
+            if (tagk == TAGK_S32)
+            {
+                acc = aref[0].GetS32();
+                fIsInt = 1;
+            }
+            else
+            {
+                acc = aref[0].GetF32();
+                fIsInt = 0;
+            }
+
+            while (pCurrent != NULL)
+            {
+                if (pCurrent->m_ref.m_tagk == TAGK_S32)
+                {
+                    acc += pCurrent->m_ref.GetS32();
+                }
+                else
+                {
+                    fIsInt = 0;
+                    acc += pCurrent->m_ref.GetF32();
+                }
+                pCurrent = pCurrent->m_ppairNext;
+            }
+
+            if (fIsInt)
+            {
+                cref.SetS32((int) acc);
+            }
+            else
+            {
+                cref.SetF32(acc);
+            }
+            break;
+        }
+        case TAGK_Vector:
+        {
+            VECTOR *pVector = PvectorNew();
+            VECTOR *pVectorSrc = aref->GetVector();
+            pVector->data = pVectorSrc->data;
+
+            while (pCurrent != NULL)
+            {
+                /* Loads the vectors into vf1 and vf2, adds them together, then reads the result */
+                __asm__ __volatile__(
+                    "lqc2      $vf1, 0x0(%0)\n"
+                    "lqc2      $vf2, 0x0(%1)\n"
+                    "vadd.xyzw $vf1, $vf1, $vf2\n"
+                    "sqc2      $vf1, 0x0(%0)\n"
+                    : : "r"(pVector), "r"(pCurrent->m_ref.GetVector()) : "memory"
+                );
+                pCurrent = pCurrent->m_ppairNext;
+            }
+
+            cref.SetVector(pVector);
+            break;
+        }
+        case TAGK_Matrix:
+        {
+            MATRIX4 *pMatrix = PmatrixNew();
+            MATRIX4 *pMatrixSrc = aref->GetMatrix();
+
+            pMatrix->data[0] = pMatrixSrc->data[0];
+            pMatrix->data[1] = pMatrixSrc->data[1];
+            pMatrix->data[2] = pMatrixSrc->data[2];
+            pMatrix->data[3] = pMatrixSrc->data[3];
+
+            while (pCurrent != NULL)
+            {
+                MATRIX4 *pMatrixOther = pCurrent->m_ref.GetMatrix();
+                pMatrix->ag[ 0] += pMatrixOther->ag[ 0];
+                pMatrix->ag[ 1] += pMatrixOther->ag[ 1];
+                pMatrix->ag[ 2] += pMatrixOther->ag[ 2];
+                pMatrix->ag[ 3] += pMatrixOther->ag[ 3];
+                pMatrix->ag[ 4] += pMatrixOther->ag[ 4];
+                pMatrix->ag[ 5] += pMatrixOther->ag[ 5];
+                pMatrix->ag[ 6] += pMatrixOther->ag[ 6];
+                pMatrix->ag[ 7] += pMatrixOther->ag[ 7];
+                pMatrix->ag[ 8] += pMatrixOther->ag[ 8];
+                pMatrix->ag[ 9] += pMatrixOther->ag[ 9];
+                pMatrix->ag[10] += pMatrixOther->ag[10];
+                pMatrix->ag[11] += pMatrixOther->ag[11];
+                pMatrix->ag[12] += pMatrixOther->ag[12];
+                pMatrix->ag[13] += pMatrixOther->ag[13];
+                pMatrix->ag[14] += pMatrixOther->ag[14];
+                pMatrix->ag[15] += pMatrixOther->ag[15];
+
+                pCurrent = pCurrent->m_ppairNext;
+            }
+
+            cref.SetMatrix(pMatrix);
+            break;
+        }
+    }
+
+    return cref;
+}
+
+CRef RefOpSub(int carg, CRef *aref, CFrame *pframe)
+{
+    CRef cref;
+
+    TAGK tagk = aref[0].m_tagk;
+    CPair *pCurrent;
+    if (aref[1].m_tagk == TAGK_None)
+    {
+        pCurrent = NULL;
+    }
+    else
+    {
+        pCurrent = aref[1].GetPair();
+    }
+
+    switch (tagk)
+    {
+        case TAGK_S32:
+        case TAGK_F32:
+        {
+            float acc;
+            int fIsInt;
+
+            if (tagk == TAGK_S32)
+            {
+                acc = aref[0].GetS32();
+                fIsInt = 1;
+            }
+            else
+            {
+                acc = aref[0].GetF32();
+                fIsInt = 0;
+            }
+
+            while (pCurrent != NULL)
+            {
+                if (pCurrent->m_ref.m_tagk == TAGK_S32)
+                {
+                    acc -= pCurrent->m_ref.GetS32();
+                }
+                else
+                {
+                    fIsInt = 0;
+                    acc -= pCurrent->m_ref.GetF32();
+                }
+                pCurrent = pCurrent->m_ppairNext;
+            }
+
+            if (fIsInt)
+            {
+                cref.SetS32((int) acc);
+            }
+            else
+            {
+                cref.SetF32(acc);
+            }
+            break;
+        }
+        case TAGK_Vector:
+        {
+            VECTOR *pVector = PvectorNew();
+            VECTOR *pVectorSrc = aref->GetVector();
+            pVector->data = pVectorSrc->data;
+
+            while (pCurrent != NULL)
+            {
+                /* Loads the vectors into vf1 and vf2, subtracts them, then reads the result */
+                __asm__ __volatile__(
+                    "lqc2      $vf1, 0x0(%0)\n"
+                    "lqc2      $vf2, 0x0(%1)\n"
+                    "vsub.xyzw $vf1, $vf1, $vf2\n"
+                    "sqc2      $vf1, 0x0(%0)\n"
+                    : : "r"(pVector), "r"(pCurrent->m_ref.GetVector()) : "memory"
+                );
+                pCurrent = pCurrent->m_ppairNext;
+            }
+
+            cref.SetVector(pVector);
+            break;
+        }
+        case TAGK_Matrix:
+        {
+            MATRIX4 *pMatrix = PmatrixNew();
+            MATRIX4 *pMatrixSrc = aref->GetMatrix();
+
+            pMatrix->data[0] = pMatrixSrc->data[0];
+            pMatrix->data[1] = pMatrixSrc->data[1];
+            pMatrix->data[2] = pMatrixSrc->data[2];
+            pMatrix->data[3] = pMatrixSrc->data[3];
+
+            while (pCurrent != NULL)
+            {
+                MATRIX4 *pMatrixOther = pCurrent->m_ref.GetMatrix();
+                pMatrix->ag[ 0] -= pMatrixOther->ag[ 0];
+                pMatrix->ag[ 1] -= pMatrixOther->ag[ 1];
+                pMatrix->ag[ 2] -= pMatrixOther->ag[ 2];
+                pMatrix->ag[ 3] -= pMatrixOther->ag[ 3];
+                pMatrix->ag[ 4] -= pMatrixOther->ag[ 4];
+                pMatrix->ag[ 5] -= pMatrixOther->ag[ 5];
+                pMatrix->ag[ 6] -= pMatrixOther->ag[ 6];
+                pMatrix->ag[ 7] -= pMatrixOther->ag[ 7];
+                pMatrix->ag[ 8] -= pMatrixOther->ag[ 8];
+                pMatrix->ag[ 9] -= pMatrixOther->ag[ 9];
+                pMatrix->ag[10] -= pMatrixOther->ag[10];
+                pMatrix->ag[11] -= pMatrixOther->ag[11];
+                pMatrix->ag[12] -= pMatrixOther->ag[12];
+                pMatrix->ag[13] -= pMatrixOther->ag[13];
+                pMatrix->ag[14] -= pMatrixOther->ag[14];
+                pMatrix->ag[15] -= pMatrixOther->ag[15];
+
+                pCurrent = pCurrent->m_ppairNext;
+            }
+
+            cref.SetMatrix(pMatrix);
+            break;
+        }
+    }
+
+    return cref;
+}
 
 INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpMult__FiP4CRefP6CFrame);
 
@@ -189,7 +431,7 @@ CRef RefOpPrintSidebag(int carg, CRef *aref, CFrame *pframe)
 CRef RefOpIntEqual(int carg, CRef *aref, CFrame *pframe)
 {
     CRef cref = CRef();
-    cref.SetBool(aref[0].m_tag.m_n == aref[1].m_tag.m_n);
+    cref.SetBool(aref[0].GetS32() == aref[1].GetS32());
     return CRef(cref);
 }
 
@@ -318,7 +560,7 @@ CRef RefOpIsObject(int carg, CRef *aref, CFrame *pframe)
 CRef RefOpIsNullObj(int carg, CRef *aref, CFrame *pframe)
 {
     CRef cref = CRef();
-    cref.SetBool(aref->m_tagk == TAGK_Basic && !aref->m_tag.m_pbasic);
+    cref.SetBool(aref->m_tagk == TAGK_Basic && !aref->GetBasic());
     return CRef(cref);
 }
 
@@ -341,25 +583,131 @@ INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpAreNear__FiP4CRefP6CFrame);
 CRef RefOpNot(int carg, CRef *aref, CFrame *pframe)
 {
     CRef cref = CRef();
-    cref.SetBool(aref->m_tagk == TAGK_Bool && !aref->m_tag.m_bool);
+    cref.SetBool(aref->m_tagk == TAGK_Bool && !aref->GetBool());
     return CRef(cref);
 }
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpCons__FiP4CRefP6CFrame);
+CRef RefOpCons(int carg, CRef* aref, CFrame *pframe)
+{
+    CRef cref;
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpCar__FiP4CRefP6CFrame);
+    /* Construct a new pair whose first entry is aref[0] */
+    CPair *ppair = PpairNew();
+    ppair->m_ref = *aref;
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpCdr__FiP4CRefP6CFrame);
+    /* Now the remainder pointer depends on the type of aref[1] */
+    CRef *pcdr = aref + 1;
+    if (pcdr->m_tagk == TAGK_None)
+    {
+        ppair->m_ppairNext = NULL;
+    }
+    else if (pcdr->m_tagk == TAGK_Pair)
+    {
+        ppair->m_ppairNext = pcdr->GetPair();
+    }
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpSetCadr__FiP4CRefP6CFrame4BIFK);
+    cref.SetPair(ppair);
+    return cref;
+}
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpSetCar__FiP4CRefP6CFrame);
+CRef RefOpCar(int carg, CRef *aref, CFrame *pframe)
+{
+    CRef cref;
+    cref = aref->GetPair()->m_ref;
+    return cref;
+}
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpSetCdr__FiP4CRefP6CFrame);
+CRef RefOpCdr(int carg, CRef *aref, CFrame *pframe)
+{
+    CRef cref;
+    CPair *ppair = aref->GetPair();
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpLength__FiP4CRefP6CFrame);
+    if (ppair->m_ppairNext != NULL)
+    {
+        cref.SetPair(ppair->m_ppairNext);
+    }
+    else
+    {
+        cref.SetTag(TAGK_None);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpNth__FiP4CRefP6CFrame);
+    return cref;
+}
+
+CRef RefOpSetCadr(int carg, CRef *aref, CFrame *pframe, BIFK bifk)
+{
+    CRef cref;
+    CPair *ppair = aref[0].GetPair();
+
+    if (bifk == BIFK_SetCar)
+    {
+        ppair->m_ref = aref[1];
+    }
+    else if (aref[1].m_tagk == TAGK_Pair)
+    {
+        ppair->m_ppairNext = aref[1].GetPair();
+    }
+    else
+    {
+        ppair->m_ppairNext = NULL;
+    }
+
+    cref.SetTag(TAGK_Void);
+    return cref;
+}
+
+CRef RefOpSetCar(int carg, CRef *aref, CFrame *pframe)
+{
+    return RefOpSetCadr(carg, aref, pframe, BIFK_SetCar);
+}
+
+CRef RefOpSetCdr(int carg, CRef *aref, CFrame *pframe)
+{
+    return RefOpSetCadr(carg, aref, pframe, BIFK_SetCdr);
+}
+
+CRef RefOpLength(int carg, CRef *aref, CFrame *pframe)
+{
+    CRef ref;
+
+    int nlength = 0;
+    if (aref->m_tagk == TAGK_Pair)
+    {
+        CPair *ppair = aref->GetPair();
+        while (ppair != NULL)
+        {
+            ppair = ppair->m_ppairNext;
+            nlength++;
+        }
+    }
+
+    ref.SetS32(nlength);
+    return ref;
+}
+
+CRef RefOpNth(int carg, CRef *aref, CFrame *pframe)
+{
+    CRef ref;
+    ref.SetTag(TAGK_None);
+
+    if (aref->m_tagk == TAGK_Pair)
+    {
+        CRef *pref = aref + 1;
+        int cur = 0;
+        for (CPair *ppair = aref->GetPair(); ppair != NULL; ppair = ppair->m_ppairNext)
+        {
+            if (cur == pref->GetS32())
+            {
+                ref = ppair->m_ref;
+                break;
+            }
+
+            cur++;
+        }
+    }
+
+    return ref;
+}
 
 INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpIsMember__FiP4CRefP6CFrame);
 
@@ -392,11 +740,72 @@ INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpSmp__FiP4CRefP6CFrame);
 
 INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpGetElement__FiP4CRefP6CFrame);
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpRandomSeed__FiP4CRefP6CFrame);
+CRef RefOpRandomSeed(int carg, CRef *aref, CFrame *pframe)
+{
+    CRef ref;
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpRandom__FiP4CRefP6CFrame);
+    if (aref->m_tagk == TAGK_S32)
+    {
+        srand(aref->GetS32());
+    }
+    else
+    {
+        srand((int) aref->GetF32());
+    }
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefUfo__FP4CRef4UFOK);
+    ref.m_tagk = TAGK_Void;
+    return ref;
+}
+
+CRef RefOpRandom(int carg, CRef *aref, CFrame *pframe)
+{
+    CRef ref;
+    float gLow;
+    float gHigh;
+
+    /* Pull low part of range... */
+    if (aref[0].m_tagk == TAGK_S32)
+    {
+        gLow = aref[0].GetS32();
+    }
+    else
+    {
+        gLow = aref[0].GetF32();
+    }
+
+    /* ... pull high part of range ... */
+    if (aref[1].m_tagk == TAGK_S32)
+    {
+        gHigh = aref[1].GetS32();
+    }
+    else
+    {
+        gHigh = aref[1].GetF32();
+    }
+
+    /* ...now generate a value between them */
+    ref.SetF32(GRandInRange(gLow, gHigh));
+
+    return ref;
+}
+
+CRef RefUfo(CRef *pref, UFOK ufok)
+{
+    float fval;
+    CRef ref;
+
+    if (pref->m_tagk == TAGK_F32)
+    {
+        fval = pref->GetF32();
+    }
+    else
+    {
+        fval = (float)pref->GetS32();
+    }
+
+    ref.SetF32(s_mpufokpfnufo[ufok](fval));
+    return ref;
+}
 
 CRef RefOpSqrt(int carg, CRef *aref, CFrame *pframe)
 {
@@ -438,7 +847,31 @@ CRef RefOpRadNormalize(int carg, CRef *aref, CFrame *pframe)
     return RefUfo(aref, UFOK_RadNormalize);
 }
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpAtan2__FiP4CRefP6CFrame);
+CRef RefOpAtan2(int carg, CRef *aref, CFrame *pframe)
+{
+    CRef cref;
+
+    float ag[2];
+    float *pg = ag;
+
+    for (int i = 0; i < 2; i++)
+    {
+        if (aref->m_tagk == TAGK_F32)
+        {
+            *pg++ = aref->GetF32();
+        }
+        else
+        {
+            *pg++ = aref->GetS32();
+        }
+
+        aref++;
+    }
+
+    cref.SetF32(atan2f(ag[0], ag[1]));
+
+    return cref;
+}
 
 INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpVectorDotProduct__FiP4CRefP6CFrame);
 

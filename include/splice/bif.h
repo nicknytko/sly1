@@ -275,6 +275,14 @@ CRef RefOpSetCdr(int carg, CRef *aref, CFrame *pframe);
 
 CRef RefOpLength(int carg, CRef *aref, CFrame *pframe);
 
+/**
+ * @brief Returns the nth element of the list `aref[0]` at 0-based index `aref[1]`.
+ *
+ * @param carg Number of passed arguments.
+ * @param aref Array of references.
+ * @param pframe Splice binding frame.
+ * @return Reference to the element at the specified index, or None reference if out of bounds.
+ */
 CRef RefOpNth(int carg, CRef *aref, CFrame *pframe);
 
 CRef RefOpIsMember(int carg, CRef *aref, CFrame *pframe);
@@ -305,10 +313,32 @@ CRef RefOpSmp(int carg, CRef *aref, CFrame *pframe);
 
 CRef RefOpGetElement(int carg, CRef *aref, CFrame *pframe);
 
+/**
+ * @brief Seeds the random number generator from `aref[0]`
+ *
+ * @param carg Number of passed arguments.
+ * @param aref Array of references.
+ * @param pframe Splice binding frame.
+ * @return Void reference
+ */
 CRef RefOpRandomSeed(int carg, CRef *aref, CFrame *pframe);
 
+/**
+ * @brief Returns a random floating point value between `aref[0]` and `aref[1]`
+ *
+ * @param carg Number of passed arguments.
+ * @param aref Array of references.
+ * @param pframe Splice binding frame.
+ * @return Float reference
+ */
 CRef RefOpRandom(int carg, CRef *aref, CFrame *pframe);
 
+/**
+ * @brief Executes a uniform float operation on a single value.
+ *
+ * @param pref Reference whose value will be replaced by the result of the operation.
+ * @param ufok Uniform float operation dispatch.
+ */
 CRef RefUfo(CRef *pref, UFOK ufok);
 
 CRef RefOpSqrt(int carg, CRef *aref, CFrame *pframe);

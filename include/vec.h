@@ -16,7 +16,14 @@ struct SO;
  */
 struct VECTOR
 {
-    float x, y, z, gUnused;
+    union
+    {
+        struct
+        {
+            float x, y, z, gUnused;
+        };
+        qword data;
+    };
 };
 
 /**
@@ -24,7 +31,14 @@ struct VECTOR
  */
 struct VECTOR4
 {
-    float x, y, z, w;
+    union
+    {
+        struct
+        {
+            float x, y, z, w;
+        };
+        qword data;
+    };
 };
 
 /**

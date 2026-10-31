@@ -102,8 +102,64 @@ public:
     void SetSmp(SMP *psmp);
     void SetBasic(BASIC *pbasic);
     void SetMethod(CMethod *pmethod);
-    int RefCoerceS32() const;
-    float RefCoerceF32() const;
+    int GetS32() const
+    {
+        return m_tag.m_n;
+    }
+    float GetF32() const
+    {
+        return m_tag.m_g;
+    }
+    int GetBool() const
+    {
+        return m_tag.m_bool;
+    }
+    uint GetSymid() const
+    {
+        return m_tag.m_symid;
+    }
+    BIFK GetBifk() const
+    {
+        return m_tag.m_bifk;
+    }
+    CPair *GetPair() const
+    {
+        return m_tag.m_ppair;
+    }
+    CProc *GetProc() const
+    {
+        return m_tag.m_pproc;
+    }
+    VECTOR *GetVector() const
+    {
+        return m_tag.m_pvector;
+    }
+    MATRIX4 *GetMatrix() const
+    {
+        return m_tag.m_pmatrix;
+    }
+    CLQ *GetClq() const
+    {
+        return m_tag.m_pclq;
+    }
+    LM *GetLm() const
+    {
+        return m_tag.m_plm;
+    }
+    SMP *GetSmp() const
+    {
+        return m_tag.m_psmp;
+    }
+    BASIC *GetBasic() const
+    {
+        return m_tag.m_pbasic;
+    }
+    CMethod *GetMethod() const
+    {
+        return m_tag.m_pmethod;
+    }
+    CRef RefCoerceS32();
+    CRef RefCoerceF32();
 };
 
 #endif // SPLICE_REF_H
