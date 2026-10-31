@@ -10,6 +10,8 @@
 
 struct SO;
 
+struct VU_VECTOR;
+
 /**
  * @brief 3D vector.
  * @note Contains an additional float for padding to 16 bytes.
@@ -24,6 +26,13 @@ struct VECTOR
         };
         qword data;
     };
+
+    /**
+     * @brief Assignment from a hardware vector type.
+     *
+     * Mangles to `__as__6VECTORG9VU_VECTOR`
+     */
+    VECTOR& operator=(VU_VECTOR v);
 };
 
 /**
@@ -42,11 +51,50 @@ struct VECTOR4
 };
 
 /**
- * @todo Should be 16-byte aligned.
+ * @brief Single float stored in a hardware EE register.
+ */
+struct VU_FLOAT
+{
+    qword data;
+
+    /**
+     * @brief Constructs a VU float by placing the regular float into
+     * the first slot of the wide register.
+     *
+     * Mangles to `__8VU_FLOATf`
+     */
+    VU_FLOAT(float g);
+};
+
+/**
+ * @brief 3D vector stored in a hardware EE register.
  */
 struct VU_VECTOR
 {
-    ushort data;
+    qword data;
+
+    /**
+     * @brief Constructs a VU vector from a regular vector
+     *
+     * Mangles to `__9VU_VECTORRC6VECTOR`
+     */
+    VU_VECTOR(const VECTOR& pvec);
+
+    /**
+     * @brief Scalar times vector multiplication
+     *
+     * This is declared friend because the first operand is the scalar.
+     * Mangles to `__ml__FG8VU_FLOATG9VU_VECTOR`
+     */
+    friend VU_VECTOR operator*(VU_FLOAT s, VU_VECTOR v);
+};
+
+/**
+ * @brief 4D vector stored in a hardware EE register.
+ */
+struct VU_VECTOR4
+{
+    qword data;
 };
 
 /**

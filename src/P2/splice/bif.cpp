@@ -404,6 +404,229 @@ CRef RefOpSub(int carg, CRef *aref, CFrame *pframe)
 }
 
 INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpMult__FiP4CRefP6CFrame);
+#ifdef SKIP_ASM
+CRef RefOpMult(int carg, CRef *aref, CFrame *pframe)
+{
+    CRef cref = CRef();
+
+    /* The possible values that can represent the product */
+    CPair* ppair;
+    MATRIX4* pmatrix = NULL;
+    LM* plm = NULL;
+    VECTOR* pvector = NULL;
+    CLQ* pclq = NULL;
+    float gscalar = 0.0;
+
+    /* The current type of the product */
+    TAGK tagProductType;
+    int fisInt = 0;
+
+    /* Determine the initial value that gets stored */
+    switch (aref[0].m_tagk)
+    {
+        case TAGK_F32:
+        {
+            tagProductType = TAGK_F32;
+            gscalar = aref->GetF32();
+            fisInt = false;
+            break;
+        }
+        case TAGK_S32:
+        {
+            tagProductType = TAGK_F32;
+            gscalar = (float) aref->GetS32();
+            fisInt = true;
+            break;
+        }
+        case TAGK_Vector:
+        {
+            tagProductType = TAGK_Vector;
+            pvector = PvectorNew();
+            *pvector = *aref->GetVector();
+        }
+        case TAGK_Matrix:
+        {
+            tagProductType = TAGK_Matrix;
+            pmatrix = PmatrixNew();
+
+            MATRIX4* pmatrixSrc = aref->GetMatrix();
+            pmatrix->data[0] = pmatrixSrc->data[0];
+            pmatrix->data[1] = pmatrixSrc->data[1];
+            pmatrix->data[2] = pmatrixSrc->data[2];
+            pmatrix->data[3] = pmatrixSrc->data[3];
+        }
+        case TAGK_Clq:
+        {
+            tagProductType = TAGK_Clq;
+            pclq = PclqNew();
+            *pclq = *aref->GetClq();
+        }
+        case TAGK_Lm:
+        {
+            tagProductType = TAGK_Lm;
+            plm = PlmNew();
+            *plm = *aref->GetLm();
+        }
+    }
+
+    ppair = NULL;
+    if (aref[1].m_tagk != TAGK_None)
+    {
+        ppair = aref[1].GetPair();
+    }
+
+    /* Now traverse the pair and dispatch multiplication based on the current accumulator type and the new type.
+       Not every type multiplies with each other, and incompatible types will be silently ignored. */
+    while (ppair != NULL)
+    {
+        switch (tagProductType)
+        {
+            case TAGK_F32:
+            {
+                /* Scalar dispatch, will automatically "up-cast" to higher order types */
+                switch (ppair->m_ref.m_tagk)
+                {
+                    case TAGK_S32:
+                    {
+                        gscalar = gscalar * (float) ppair->m_ref.GetS32();
+                        break;
+                    }
+                    case TAGK_F32:
+                    {
+                        fisInt = false;
+                        gscalar = gscalar * ppair->m_ref.GetF32();
+                        break;
+                    }
+                    case TAGK_Vector:
+                    {
+                        tagProductType = TAGK_Vector;
+                        pvector = PvectorNew();
+                        /* scalar vector multiplication */
+                        break;
+                    }
+                    case TAGK_Matrix:
+                    {
+                        tagProductType = TAGK_Matrix;
+                        pmatrix = PmatrixNew();
+                        MATRIX4 ret = (*ppair->m_ref.GetMatrix()) * VU_FLOAT(gscalar);
+                        MATRIX4 temp;
+                        memcpy(&temp, &ret, sizeof(MATRIX4));
+                        *pmatrix = temp;
+                        break;
+                    }
+                    case TAGK_Clq:
+                    {
+                        tagProductType = TAGK_Clq;
+                        pclq = PclqNew();
+                        *(VECTOR*) pclq = VU_FLOAT(gscalar) * VU_VECTOR(*(VECTOR*) ppair->m_ref.GetClq());
+                        break;
+                    }
+                    case TAGK_Lm:
+                    {
+                        tagProductType = TAGK_Lm;
+                        plm = PlmNew();
+                        plm->gMin = ppair->m_ref.GetLm()->gMin * gscalar;
+                        plm->gMax = ppair->m_ref.GetLm()->gMax * gscalar;
+                        break;
+                    }
+                }
+                break;
+            }
+            case TAGK_Vector:
+            {
+                TAGK tagOperand = ppair->m_ref.m_tagk;
+                if (tagOperand == TAGK_S32)
+                {
+                    /* scalar vector multiplication */
+                }
+                else if (tagOperand == TAGK_F32)
+                {
+                    /* scalar vector multiplication */
+                }
+                break;
+            }
+            case TAGK_Matrix:
+            {
+                TAGK tagOperand = ppair->m_ref.m_tagk;
+                switch (tagOperand)
+                {
+                    case TAGK_F32:
+                    case TAGK_S32:
+                    {
+                        VU_FLOAT vf(tagOperand == TAGK_F32 ?
+                                    ppair->m_ref.GetF32() :
+                                    (float) ppair->m_ref.GetS32());
+
+                        MATRIX4 ret = (*pmatrix) * vf;
+                        MATRIX4 temp;
+                        memcpy(&temp, &ret, sizeof(MATRIX4));
+                        *pmatrix = temp;
+                        break;
+                    }
+                    case TAGK_Vector:
+                    {
+                        pvector = PvectorNew();
+                        MultiplyMatrix4Vector(pmatrix, ppair->m_ref.GetVector(), 1.0f,  pvector);
+                        tagProductType = TAGK_Vector;
+                        break;
+                    }
+                    case TAGK_Matrix:
+                    {
+                        *pmatrix = (*pmatrix) * (*ppair->m_ref.GetMatrix());
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        ppair = ppair->m_ppairNext;
+    }
+
+    /* Now place the result in the output reference */
+    switch (tagProductType)
+    {
+        case TAGK_F32:
+        {
+            if (fisInt)
+            {
+                cref.SetS32((int) gscalar);
+            }
+            else
+            {
+                cref.SetF32(gscalar);
+            }
+            break;
+        }
+        case TAGK_Vector:
+        {
+            cref.SetVector(pvector);
+            if (pmatrix)
+            {
+                DeleteMatrix(pmatrix);
+            }
+            break;
+        }
+        case TAGK_Matrix:
+        {
+            cref.SetMatrix(pmatrix);
+            break;
+        }
+        case TAGK_Clq:
+        {
+            cref.SetClq(pclq);
+            break;
+        }
+        case TAGK_Lm:
+        {
+            cref.SetLm(plm);
+            break;
+        }
+    }
+
+    return cref;
+}
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpDiv__FiP4CRefP6CFrame);
 
@@ -1028,10 +1251,38 @@ INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpEmitSmokeCloud__FiP4CRefP6CFr
 
 INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", RefOpPredictAnimationEffect__FiP4CRefP6CFrame);
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", __8VU_FLOATf);
+VU_FLOAT::VU_FLOAT(float g)
+{
+    /* This looks weird, but it seems this has to be an array to
+       force a stack allocation */
+    qword q[1];
+    __asm__ __volatile__("mfc1 %0, %1" : "=r"(q[0]) : "f"(g));
+    data = q[0];
+}
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", __9VU_VECTORRC6VECTOR);
+VU_VECTOR::VU_VECTOR(const VECTOR& pvec)
+{
+    data = pvec.data;
+}
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", __as__6VECTORG9VU_VECTOR);
+VECTOR& VECTOR::operator=(VU_VECTOR pvec)
+{
+    data = pvec.data;
+    return *this;
+}
 
-INCLUDE_ASM("asm/nonmatchings/P2/splice/bif", __ml__FG8VU_FLOATG9VU_VECTOR);
+VU_VECTOR operator*(VU_FLOAT s, VU_VECTOR v)
+{
+    /* Load s and v into vf1 and vf2, respectively, multiply vf1.x * vf2,
+       then copy it back to result */
+    VU_VECTOR result = v;
+    __asm__ __volatile__(
+        "qmtc2.ni %1, $vf1\n"
+        "qmtc2.ni %2, $vf2\n"
+        "vmulx.xyzw $vf1, $vf2, $vf1x\n"
+        "qmfc2.ni %0, $vf1"
+        : "=r"(result.data)
+        : "r"(s.data), "r"(v.data)
+    );
+    return result;
+}

@@ -21,14 +21,6 @@ struct RPL;
 typedef int GRFZON;
 
 /**
- * @todo Move elsewhere?
- */
-struct VU_FLOAT
-{
-    uint16_t data;
-};
-
-/**
  * @brief Unknown.
  */
 enum BLIPOK

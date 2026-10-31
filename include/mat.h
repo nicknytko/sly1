@@ -20,6 +20,20 @@ struct MATRIX4
 		VECTOR4 avec[4];
 		qword data[4];
 	};
+
+	/**
+	 * @brief Matrix times scalar multiplication.
+	 *
+	 * Mangles to `__ml__FRC7MATRIX4G8VU_FLOAT`
+	 */
+	friend MATRIX4 operator*(const MATRIX4 &pmat, VU_FLOAT s);
+
+	/**
+	 * @brief Matrix times matrix multiplication.
+	 *
+	 * Mangles to `__ml__FRC7MATRIX4T0`
+	 */
+	friend MATRIX4 operator*(const MATRIX4 &a, const MATRIX4 &b);
 };
 
 /**
